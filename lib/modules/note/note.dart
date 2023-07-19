@@ -3,7 +3,7 @@ import 'package:sradford_notes/persistance/database_column.dart';
 class Note {
   String content = '';
   String createdAt = '';
-  String noteId = '';
+  int? noteId;
   String raw = '';
   String title = '';
   String updatedAt = '';
@@ -38,6 +38,16 @@ class Note {
     title = json[DatabaseColumn.Title];
     updatedAt = json[DatabaseColumn.UpdatedAt];
   }
+
+  Map<String, dynamic> toPersistence() =>
+  {
+    DatabaseColumn.Content: content,
+    DatabaseColumn.CreatedAt: createdAt,
+    DatabaseColumn.NoteId: noteId,
+    DatabaseColumn.Raw: raw,
+    DatabaseColumn.Title: title,
+    DatabaseColumn.UpdatedAt: updatedAt,
+  };
 
   void setUpdatedAtToNow() {
     updatedAt = new DateTime.now().toIso8601String();

@@ -46,7 +46,7 @@ class DBProvider {
 
   String _getNoteScheme() {
     return "CREATE TABLE ${DatabaseTable.Note} ("
-        "${DatabaseColumn.NoteId} TEXT PRIMARY KEY,"
+        "${DatabaseColumn.NoteId} INTEGER PRIMARY KEY,"
         "${DatabaseColumn.Content} TEXT,"
         "${DatabaseColumn.CreatedAt} TEXT,"
         "${DatabaseColumn.Raw} TEXT,"
