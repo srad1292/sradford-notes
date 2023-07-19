@@ -51,7 +51,7 @@ class DBProvider {
         "${DatabaseColumn.CreatedAt} TEXT,"
         "${DatabaseColumn.Raw} TEXT,"
         "${DatabaseColumn.Title} TEXT,"
-        "${DatabaseColumn.UpdatedAt} TEXT,"
+        "${DatabaseColumn.UpdatedAt} TEXT"
         ");";
   }
 

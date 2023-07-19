@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sradford_notes/modules/note/note_list_page.dart';
+import 'package:sradford_notes/utils/style/app_theme.dart';
 
 
 class SradfordNotesApp extends StatefulWidget {
@@ -9,8 +10,6 @@ class SradfordNotesApp extends StatefulWidget {
 
 class _SradfordNotesAppState extends State<SradfordNotesApp> {
 
-  double lastHeight = -1;
-
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -19,6 +18,7 @@ class _SradfordNotesAppState extends State<SradfordNotesApp> {
               builder: (context, orientation) {
                 return MaterialApp(
                   title: 'Sradford Notes',
+                  theme: AppTheme.lightTheme,
                   home: NoteListPage(),
                 );
               }
