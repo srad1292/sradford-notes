@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:sradford_notes/persistance/database_column.dart';
 
 class Note {
@@ -12,7 +14,7 @@ class Note {
 
   Note.full({content, createdAt, noteId, raw, title, updatedAt});
 
-  Note.now({content, noteId, raw, title}) {
+  Note.now({content = '', raw = '', title = ''}) {
     this.content = content;
     this.noteId = noteId;
     this.raw = raw;
@@ -51,5 +53,9 @@ class Note {
 
   void setUpdatedAtToNow() {
     updatedAt = new DateTime.now().toIso8601String();
+  }
+
+  String getPreview() {
+    return raw.substring(0, min(raw.length, 60)).replaceAll('\n', ' ');
   }
 }

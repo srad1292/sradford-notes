@@ -15,6 +15,7 @@ class AppTheme {
     inputDecorationTheme: inputDecorationThemeLight,
     iconTheme: iconThemeLight,
     elevatedButtonTheme: elevatedButtonThemeLight,
+    listTileTheme: listTileThemeLight,
     // toggleableActiveColor: primaryLightForeground,
   );
 
@@ -202,6 +203,17 @@ class AppTheme {
           vertical: 10,
           horizontal: 20
       ),
+    ),
+  );
+
+  static ListTileThemeData listTileThemeLight = ListTileThemeData(
+    titleTextStyle: TextStyle(
+      color: Colors.black87,
+      fontSize: 18,
+      fontWeight: FontWeight.w400,
+    ),
+    subtitleTextStyle: TextStyle(
+      fontSize: 14,
     ),
   );
 

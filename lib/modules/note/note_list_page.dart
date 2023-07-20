@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:sradford_notes/utils/service_locator.dart';
@@ -15,6 +18,10 @@ class NoteListPage extends StatefulWidget {
 
 class _NoteListPageState extends State<NoteListPage> {
 
+  final TextEditingController _searchController = new TextEditingController();
+  Timer? _debounce;
+  String _noteSearchText = '';
+
   late NoteService _noteService;
 
   List<Note> _notes = [];
@@ -27,11 +34,40 @@ class _NoteListPageState extends State<NoteListPage> {
   void initState() {
     super.initState();
     _noteService = serviceLocator.get<NoteService>();
-
+    _searchController.addListener(noteSearchHandler);
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
       _loadNotes();
     });
+  }
+
+  void noteSearchHandler() {
+    if(_searchController.text == _noteSearchText) {
+      return;
+    }
+
+    setState(() {
+      _noteSearchText = _searchController.text;
+    });
+
+    if(_debounce?.isActive ?? false) {
+      _debounce?.cancel();
+    }
+
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      if (mounted) {
+        setState(() {
+          _noteSearchText = _searchController.text;
+        });
+        _loadNotes(search: _noteSearchText);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,12 +80,13 @@ class _NoteListPageState extends State<NoteListPage> {
       body: _buildBody(),
       floatingActionButton: !_loaded ? null : FloatingActionButton(
         child: Icon(Icons.add),
-        onPressed: () {
-          Navigator.of(context).push(
+        onPressed: () async {
+          await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => EditorPage(),
             ),
           );
+          _loadNotes();
         },
       ),
     );
@@ -100,12 +137,57 @@ class _NoteListPageState extends State<NoteListPage> {
   }
   
   Widget _buildNoteList() {
-    return Placeholder();
+    return
+    Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          child: TextField(
+            controller: _searchController,
+            decoration: InputDecoration(
+              hintText: "Search"
+            ),
+          ),
+        ),
+        SizedBox(height: 8),
+        Expanded(
+          child: ListView.separated(
+            itemCount: _notes.length,
+            itemBuilder: (context, index) {
+              String title = _notes[index].title;
+              String subtitle = _notes[index].getPreview();
+
+              return ListTile(
+                title: Text(title),
+                subtitle: Text(
+                  subtitle,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                trailing: Icon(Icons.chevron_right),
+                onTap: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => EditorPage(note: _notes[index]),
+                    ),
+                  );
+                  _loadNotes();
+                },
+              );
+            },
+            separatorBuilder: (context, index) {
+              return Divider(
+                thickness: 2.0,
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
-  Future<void> _loadNotes() async {
+  Future<void> _loadNotes({String search = ''}) async {
     retries++;
-    List<Note>? startingNotes = await _noteService.getAllNotes();
+    List<Note>? startingNotes = await _noteService.getAllNotes(noteSearch: search);
     if(startingNotes == null) {
       setState(() {
         _loaded = true;

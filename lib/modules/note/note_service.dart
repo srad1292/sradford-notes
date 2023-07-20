@@ -5,10 +5,10 @@ class NoteService {
 
   NoteService();
 
-  Future<bool> addOrUpdateNote(Note note) async {
+  Future<int> addOrUpdateNote(Note note) async {
     NoteDao noteDao = new NoteDao();
-    int? rowCount = await noteDao.addOrUpdateNote(note);
-    return (rowCount ?? 0) > 0;
+    int? insertedId = await noteDao.addOrUpdateNote(note);
+    return insertedId ?? -1;
   }
 
   Future<Note?> getNoteById(int noteId) async {

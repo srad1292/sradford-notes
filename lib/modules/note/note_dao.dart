@@ -12,8 +12,8 @@ class NoteDao {
   Future<int?> addOrUpdateNote(Note note) async {
     try {
       Database? db = await (DBProvider.db.database);
-      int? rowCount = await db?.insert(DatabaseTable.Note, note.toPersistence(), conflictAlgorithm: ConflictAlgorithm.replace);
-      return rowCount;
+      int? insertedId = await db?.insert(DatabaseTable.Note, note.toPersistence(), conflictAlgorithm: ConflictAlgorithm.replace);
+      return insertedId;
     } on Exception catch (e) {
       print("Error adding or replacing note");
       print(e.toString());
