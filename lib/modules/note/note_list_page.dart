@@ -27,6 +27,7 @@ class _NoteListPageState extends State<NoteListPage> {
   List<Note> _notes = [];
   bool _loaded = false;
   bool _notesFailed = false;
+  bool _notesExist = false;
 
   int retries = 0;
 
@@ -56,9 +57,7 @@ class _NoteListPageState extends State<NoteListPage> {
 
     _debounce = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
-        setState(() {
-          _noteSearchText = _searchController.text;
-        });
+        _noteSearchText = _searchController.text;
         _loadNotes(search: _noteSearchText);
       }
     });
@@ -96,7 +95,7 @@ class _NoteListPageState extends State<NoteListPage> {
     return SafeArea(
       child: !_loaded ? _buildInitializingView() :
         _notesFailed ? _buildNotesFailedView() :
-        _notes.isEmpty ? _buildEmptyNoteList() : _buildNoteList(),
+        _notes.isEmpty && !_notesExist ? _buildEmptyNoteList() : _buildNoteList(),
     );
   }
   
@@ -137,8 +136,7 @@ class _NoteListPageState extends State<NoteListPage> {
   }
   
   Widget _buildNoteList() {
-    return
-    Column(
+    return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
@@ -150,37 +148,42 @@ class _NoteListPageState extends State<NoteListPage> {
           ),
         ),
         SizedBox(height: 8),
-        Expanded(
-          child: ListView.separated(
-            itemCount: _notes.length,
-            itemBuilder: (context, index) {
-              String title = _notes[index].title;
-              String subtitle = _notes[index].getPreview();
-
-              return ListTile(
-                title: Text(title),
-                subtitle: Text(
-                  subtitle,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                trailing: Icon(Icons.chevron_right),
-                onTap: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => EditorPage(note: _notes[index]),
-                    ),
-                  );
-                  _loadNotes();
-                },
-              );
-            },
-            separatorBuilder: (context, index) {
-              return Divider(
-                thickness: 2.0,
-              );
-            },
+        if(_notes.isEmpty)
+          Center(
+            child: Text("No notes match."),
           ),
-        ),
+        if(_notes.isNotEmpty)
+          Expanded(
+            child: ListView.separated(
+              itemCount: _notes.length,
+              itemBuilder: (context, index) {
+                String title = _notes[index].title;
+                String subtitle = _notes[index].getPreview();
+
+                return ListTile(
+                  title: Text(title),
+                  subtitle: Text(
+                    subtitle,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  trailing: Icon(Icons.chevron_right),
+                  onTap: () async {
+                    await Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => EditorPage(note: _notes[index]),
+                      ),
+                    );
+                    _loadNotes();
+                  },
+                );
+              },
+              separatorBuilder: (context, index) {
+                return Divider(
+                  thickness: 2.0,
+                );
+              },
+          ),
+          ),
       ],
     );
   }
@@ -199,6 +202,7 @@ class _NoteListPageState extends State<NoteListPage> {
         _loaded = true;
         _notesFailed = retries >= 2 ? false : true;
         _notes = new List.from(startingNotes);
+        _notesExist = true;
       });
     }
   }
