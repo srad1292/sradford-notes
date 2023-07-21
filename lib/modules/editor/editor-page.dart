@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:sradford_notes/modules/note/note_service.dart';
+import 'package:sradford_notes/modules/shared/enum/info_dialog_type.dart';
+import 'package:sradford_notes/modules/shared/widgets/my_confirmation_dialog.dart';
+import 'package:sradford_notes/modules/shared/widgets/my_info_dialog.dart';
 import 'package:sradford_notes/utils/service_locator.dart';
 
 import '../note/note.dart';
@@ -25,13 +29,12 @@ class _EditorPageState extends State<EditorPage> {
   late NoteService _noteService;
   late Note workingNote;
 
-  bool _isCreate = true;
+  String title = '';
 
   @override
   void initState() {
     super.initState();
     _noteService = serviceLocator.get<NoteService>();
-    _isCreate = widget.note == null;
     workingNote = widget.note == null ? Note.empty() : Note.fromNote(widget.note!);
     if(workingNote.title.isNotEmpty) {
       _titleController.text = workingNote.title;
@@ -52,10 +55,46 @@ class _EditorPageState extends State<EditorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        title: Text(title),
+        centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.save),
           onPressed: saveNote,
         ),
+        actions: [
+          PopupMenuButton(
+            onSelected: (value) async {
+              switch (value) {
+                case "cancel":
+                  return Navigator.of(context).pop();
+                case 'export':
+                  return _exportNote();
+                case 'delete':
+                  return _deleteNote();
+                default:
+                  throw UnimplementedError();
+              }
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              PopupMenuItem<String>(
+                value: "cancel",
+                // onTap: () => Navigator.of(context).pop(),
+                child: Text('Cancel'),
+              ),
+              if(workingNote.noteId != null)
+                PopupMenuItem<String>(
+                  value: "export",
+                  // onTap: _exportNote,
+                  child: Text('Export'),
+                ),
+              if(workingNote.noteId != null)
+                PopupMenuItem<String>(
+                  value: "delete",
+                  child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
+                ),
+            ],
+          )
+        ],
       ),
       body: SafeArea(
         child: Container(
@@ -64,10 +103,13 @@ class _EditorPageState extends State<EditorPage> {
               padding: const EdgeInsets.symmetric(horizontal: 8.0),
               child: Column(
                 children: [
-                  TextField(
-                    controller: _titleController,
-                    decoration: InputDecoration(
-                      hintText: "Title"
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24),
+                    child: TextField(
+                      controller: _titleController,
+                      decoration: InputDecoration(
+                        hintText: "Title"
+                      ),
                     ),
                   ),
                   SizedBox(height: 8),
@@ -75,6 +117,12 @@ class _EditorPageState extends State<EditorPage> {
                     child: QuillToolbar.basic(
                       controller: _controller,
                       color: Colors.white,
+                      showColorButton: false,
+                      showBackgroundColorButton: false,
+                      showClearFormat: false,
+                      showLink: false,
+                      showSuperscript: false,
+                      showSubscript: false,
                     ),
                   ),
                   Expanded(
@@ -107,6 +155,17 @@ class _EditorPageState extends State<EditorPage> {
       if(savedId == -1) {
         print("Saving note returned invalid id");
       } else {
+        setState(() {
+          title = "Saved!";
+        });
+        Timer(const Duration(milliseconds: 1000), () {
+          if (mounted) {
+            setState(() {
+              title = '';
+            });
+          }
+        });
+
         noteToSave.noteId = savedId;
         workingNote = Note.fromNote(noteToSave);
       }
@@ -123,4 +182,43 @@ class _EditorPageState extends State<EditorPage> {
     print("JSON");
     print(_controller.document.toDelta().toJson());
   }
+
+  Future<void> _exportNote() async {
+
+  }
+
+  Future<void> _deleteNote() async {
+    print("I am inside delete note");
+    bool confirmed = await showMyConfirmationDialog(context: context, body: "Are you sure you want to delete this note?");
+    if(confirmed == true) {
+      try {
+        int deletedCount = await _noteService.deleteNote(noteId: workingNote.noteId ?? -1);
+        if(deletedCount == 0) {
+          showMyInfoDialog(
+            context: context,
+            dialogType: InfoDialogType.Warning,
+            body: "Note was not deleted."
+          );
+        } else if(deletedCount == -1) {
+          _showDeleteErrorDialog();
+        } else {
+          Navigator.of(context).pop();
+        }
+      } on Exception catch (e) {
+        _showDeleteErrorDialog();
+        print("Something went wrong while deleting note");
+        print(e.toString());
+      }
+    }
+  }
+
+  void _showDeleteErrorDialog() {
+    showMyInfoDialog(
+        context: context,
+        dialogType: InfoDialogType.Error,
+        body: "Something went wrong while trying to delete the note."
+    );
+  }
+
+
 }

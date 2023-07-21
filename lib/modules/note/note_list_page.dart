@@ -29,8 +29,6 @@ class _NoteListPageState extends State<NoteListPage> {
   bool _notesFailed = false;
   bool _notesExist = false;
 
-  int retries = 0;
-
   @override
   void initState() {
     super.initState();
@@ -189,7 +187,6 @@ class _NoteListPageState extends State<NoteListPage> {
   }
 
   Future<void> _loadNotes({String search = ''}) async {
-    retries++;
     List<Note>? startingNotes = await _noteService.getAllNotes(noteSearch: search);
     if(startingNotes == null) {
       setState(() {
@@ -200,7 +197,7 @@ class _NoteListPageState extends State<NoteListPage> {
     } else {
       setState(() {
         _loaded = true;
-        _notesFailed = retries >= 2 ? false : true;
+        _notesFailed = false;
         _notes = new List.from(startingNotes);
         _notesExist = true;
       });

@@ -47,7 +47,7 @@ class AppTheme {
   );
 
   static IconThemeData barIconThemeLight = IconThemeData(
-      color: Colors.black87
+      color: Colors.white
   );
 
   static TextTheme lightTextTheme = TextTheme(

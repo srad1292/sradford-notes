@@ -20,4 +20,9 @@ class NoteService {
     NoteDao noteDao = new NoteDao();
     return await noteDao.getAllNotes(noteSearch: noteSearch);
   }
+
+  Future<int> deleteNote({int noteId = -1}) async {
+    NoteDao noteDao = new NoteDao();
+    return await noteDao.deleteNote(noteId: noteId);
+  }
 }

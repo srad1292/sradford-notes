@@ -59,6 +59,25 @@ class NoteDao {
       print(error.toString());
       return null;
     }
+  }
+
+  Future<int> deleteNote({int noteId = -1}) async {
+    if(noteId <= 0) { return -1; }
+
+    Database? db = await DBProvider.db.database;
+    try {
+      int? deletedCount = await db?.delete(DatabaseTable.Note, where: "${DatabaseColumn.NoteId} = ?", whereArgs: [noteId]);
+      if(deletedCount != null && deletedCount > 0) {
+        print("Count of deleted notes: $deletedCount");
+      }
+      return deletedCount ?? 0;
+    } on Exception catch (e) {
+      print("Error deleting note with id: $noteId");
+      print(e);
+      return -1;
+    }
 
   }
+
+
 }
