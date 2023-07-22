@@ -1,7 +1,10 @@
 import 'dart:async';
-
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:sradford_notes/modules/shared/enum/info_dialog_type.dart';
+import 'package:sradford_notes/modules/shared/widgets/my_confirmation_dialog.dart';
+import 'package:sradford_notes/modules/shared/widgets/my_info_dialog.dart';
 import 'package:sradford_notes/utils/service_locator.dart';
 
 import '../editor/editor-page.dart';
@@ -123,7 +126,7 @@ class _NoteListPageState extends State<NoteListPage> {
           case NoteListAction.Export:
           // handle export
           case NoteListAction.Delete:
-          // delete selected
+            return _deleteSelected();
           default:
             throw UnimplementedError();
         }
@@ -306,5 +309,46 @@ class _NoteListPageState extends State<NoteListPage> {
       _isSelectionMode = false;
       _selected = [];
     });
+  }
+
+  Future<void> _deleteSelected() async {
+    bool showedNoSelectedDialog = showNoSelectedDialog();
+    if(showedNoSelectedDialog) { return; }
+
+    bool confirmDelete = await showMyConfirmationDialog(context: context, body: "Are you sure you want to delete these notes?");
+    if(confirmDelete != true) {
+      return;
+    }
+
+    try {
+      List<int> noteIds = [];
+      _selected.forEachIndexed((index, element) {
+        if(element == true) {
+          noteIds.add(_notes[index].noteId!);
+        }
+      });
+      int deletedCount = await _noteService.bulkDeleteNotes(noteIds: noteIds);
+      if(deletedCount == 0) {
+        showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "No notes deleted.");
+      } else {
+        _exitSelectionMode();
+        _loadNotes(search: _searchController.text);
+      }
+    } catch(e) {
+      showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Bulk delete failed.");
+    }
+  }
+
+  bool showNoSelectedDialog() {
+    int selectedCount = 0;
+    _selected.forEach((element) {
+      if(element == true) {
+        selectedCount++;
+      }
+    });
+    if(selectedCount == 0) {
+      showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "You must select at least one note first.");
+    }
+    return selectedCount == 0;
   }
 }

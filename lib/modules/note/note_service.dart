@@ -25,4 +25,9 @@ class NoteService {
     NoteDao noteDao = new NoteDao();
     return await noteDao.deleteNote(noteId: noteId);
   }
+
+  Future<int> bulkDeleteNotes({required List<int> noteIds}) async {
+    NoteDao noteDao = new NoteDao();
+    return await noteDao.bulkDelete(noteIds: noteIds);
+  }
 }

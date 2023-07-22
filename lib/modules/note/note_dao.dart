@@ -79,5 +79,21 @@ class NoteDao {
 
   }
 
+  Future<int> bulkDelete({required List<int> noteIds}) async {
+    if(noteIds.isEmpty) { return -1; }
+    try {
+      Database? db = await DBProvider.db.database;
+      String joinedIds = List.filled(noteIds.length, '?').join(',');
+      int? deletedCount = await db?.delete(DatabaseTable.Note,
+          where: '${DatabaseColumn.NoteId} IN ($joinedIds)',
+          whereArgs: noteIds);
+      return deletedCount ?? 0;
+    } on Exception catch (e) {
+      print("Note Dao: Error in bulk delete");
+      print(e.toString());
+      return -1;
+    }
+  }
+
 
 }
