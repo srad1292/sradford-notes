@@ -35,6 +35,8 @@ class _NoteListPageState extends State<NoteListPage> {
 
   bool _isSelectionMode = false;
 
+  int selectedCount = 0;
+
   @override
   void initState() {
     super.initState();
@@ -82,7 +84,7 @@ class _NoteListPageState extends State<NoteListPage> {
           icon: Icon(Icons.arrow_back)
         ) : null,
         title: Text(
-          _isSelectionMode ? _getSelectionTitle() : "Notes"
+          _isSelectionMode ? "$selectedCount Selected" : "Notes"
         ),
         centerTitle: true,
         actions: [
@@ -102,17 +104,6 @@ class _NoteListPageState extends State<NoteListPage> {
         },
       ),
     );
-  }
-
-  String _getSelectionTitle() {
-    int selectedCount = 0;
-    _selected.forEach((element) {
-      if(element == true) {
-        selectedCount++;
-      }
-    });
-
-    return "$selectedCount Selected";
   }
 
   Widget _buildActionsMenu() {
@@ -215,6 +206,22 @@ class _NoteListPageState extends State<NoteListPage> {
           ),
         ),
         SizedBox(height: 8),
+
+        if(_isSelectionMode)
+          GestureDetector(
+            onTap: quickSelectionToggle,
+            child: Text(
+              selectedCount == 0 ? "Select All" : "Deselect All",
+              style: TextStyle(
+                color: Colors.blue,
+                fontWeight: FontWeight.w500
+              )
+            ),
+          ),
+
+        if(_isSelectionMode)
+          SizedBox(height: 8),
+
         if(_notes.isEmpty)
           Center(
             child: Text("No notes match."),
@@ -226,7 +233,9 @@ class _NoteListPageState extends State<NoteListPage> {
               itemBuilder: (context, index) {
                 String title = _notes[index].title;
                 String subtitle = _notes[index].getPreview();
-
+                if(_isSelectionMode) {
+                  print("Is $index selected: ${_selected[index]}");
+                }
                 return ListTile(
                   leading: _isSelectionMode ?
                     Icon(
@@ -243,6 +252,11 @@ class _NoteListPageState extends State<NoteListPage> {
                   onTap: () async {
                     if(_isSelectionMode) {
                       setState(() {
+                        if(_selected[index] == true) {
+                          selectedCount--;
+                        } else {
+                          selectedCount++;
+                        }
                         _selected[index] = !_selected[index];
                       });
                     } else {
@@ -268,6 +282,15 @@ class _NoteListPageState extends State<NoteListPage> {
           ),
       ],
     );
+  }
+
+  void quickSelectionToggle() {
+    setState(() {
+      _selected.forEachIndexed((index, element) {
+        _selected[index] = selectedCount == 0;
+      });
+      selectedCount = selectedCount == 0 ? _selected.length : 0;
+    });
   }
 
   Future<void> _loadNotes({String search = ''}) async {
@@ -301,6 +324,7 @@ class _NoteListPageState extends State<NoteListPage> {
     setState(() {
       _isSelectionMode = true;
       _selected = new List.generate(_notes.length, (index) => false);
+      selectedCount = 0;
     });
   }
 
@@ -308,12 +332,15 @@ class _NoteListPageState extends State<NoteListPage> {
     setState(() {
       _isSelectionMode = false;
       _selected = [];
+      selectedCount = 0;
     });
   }
 
   Future<void> _deleteSelected() async {
-    bool showedNoSelectedDialog = showNoSelectedDialog();
-    if(showedNoSelectedDialog) { return; }
+    if(selectedCount == 0) {
+      showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "You must select at least one note first.");
+      return;
+    }
 
     bool confirmDelete = await showMyConfirmationDialog(context: context, body: "Are you sure you want to delete these notes?");
     if(confirmDelete != true) {
@@ -337,18 +364,5 @@ class _NoteListPageState extends State<NoteListPage> {
     } catch(e) {
       showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Bulk delete failed.");
     }
-  }
-
-  bool showNoSelectedDialog() {
-    int selectedCount = 0;
-    _selected.forEach((element) {
-      if(element == true) {
-        selectedCount++;
-      }
-    });
-    if(selectedCount == 0) {
-      showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "You must select at least one note first.");
-    }
-    return selectedCount == 0;
   }
 }
