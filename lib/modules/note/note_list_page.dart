@@ -1,11 +1,11 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:sradford_notes/utils/service_locator.dart';
 
 import '../editor/editor-page.dart';
+import 'enums/note_list_action.dart';
 import 'note.dart';
 import 'note_service.dart';
 
@@ -25,9 +25,12 @@ class _NoteListPageState extends State<NoteListPage> {
   late NoteService _noteService;
 
   List<Note> _notes = [];
+  List<bool> _selected = [];
   bool _loaded = false;
   bool _notesFailed = false;
   bool _notesExist = false;
+
+  bool _isSelectionMode = false;
 
   @override
   void initState() {
@@ -71,8 +74,17 @@ class _NoteListPageState extends State<NoteListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Notes"),
+        leading: _isSelectionMode ? IconButton(
+          onPressed: _exitSelectionMode,
+          icon: Icon(Icons.arrow_back)
+        ) : null,
+        title: Text(
+          _isSelectionMode ? _getSelectionTitle() : "Notes"
+        ),
         centerTitle: true,
+        actions: [
+          _buildActionsMenu()
+        ],
       ),
       body: _buildBody(),
       floatingActionButton: !_loaded ? null : FloatingActionButton(
@@ -87,6 +99,59 @@ class _NoteListPageState extends State<NoteListPage> {
         },
       ),
     );
+  }
+
+  String _getSelectionTitle() {
+    int selectedCount = 0;
+    _selected.forEach((element) {
+      if(element == true) {
+        selectedCount++;
+      }
+    });
+
+    return "$selectedCount Selected";
+  }
+
+  Widget _buildActionsMenu() {
+    return PopupMenuButton(
+      onSelected: (value) async {
+        switch (value) {
+          case NoteListAction.Select:
+            return _enterSelectionMode();
+          case NoteListAction.Import:
+          // handle import
+          case NoteListAction.Export:
+          // handle export
+          case NoteListAction.Delete:
+          // delete selected
+          default:
+            throw UnimplementedError();
+        }
+      },
+      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+        if(!_isSelectionMode)
+          PopupMenuItem<String>(
+            value: NoteListAction.Select,
+            child: Text(NoteListAction.Select),
+          ),
+        if(!_isSelectionMode)
+          PopupMenuItem<String>(
+            value: NoteListAction.Import,
+            child: Text(NoteListAction.Import),
+          ),
+        if(_isSelectionMode)
+          PopupMenuItem<String>(
+            value: NoteListAction.Export,
+            child: Text(NoteListAction.Export),
+          ),
+        if(_isSelectionMode)
+          PopupMenuItem<String>(
+            value: NoteListAction.Delete,
+            child: Text(NoteListAction.Delete, style: TextStyle(color: Colors.redAccent),),
+          ),
+      ],
+    );
+
   }
 
   Widget _buildBody() {
@@ -140,6 +205,7 @@ class _NoteListPageState extends State<NoteListPage> {
           padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
           child: TextField(
             controller: _searchController,
+            enabled: !_isSelectionMode,
             decoration: InputDecoration(
               hintText: "Search"
             ),
@@ -159,6 +225,12 @@ class _NoteListPageState extends State<NoteListPage> {
                 String subtitle = _notes[index].getPreview();
 
                 return ListTile(
+                  leading: _isSelectionMode ?
+                    Icon(
+                      _selected[index] ? Icons.circle : Icons.circle_outlined,
+                      color: _selected[index] ? Colors.lightBlueAccent : Colors.black45
+                    )
+                    : null,
                   title: Text(title),
                   subtitle: Text(
                     subtitle,
@@ -166,12 +238,21 @@ class _NoteListPageState extends State<NoteListPage> {
                   ),
                   trailing: Icon(Icons.chevron_right),
                   onTap: () async {
-                    await Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => EditorPage(note: _notes[index]),
-                      ),
-                    );
-                    _loadNotes();
+                    if(_isSelectionMode) {
+                      setState(() {
+                        _selected[index] = !_selected[index];
+                      });
+                    } else {
+                      _goToNote(_notes[index]);
+                    }
+
+                  },
+                  onLongPress: () {
+                    if(_isSelectionMode) {
+                      _exitSelectionMode();
+                    } else {
+                      _enterSelectionMode();
+                    }
                   },
                 );
               },
@@ -202,5 +283,28 @@ class _NoteListPageState extends State<NoteListPage> {
         _notesExist = true;
       });
     }
+  }
+
+  void _goToNote(Note note) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => EditorPage(note: note),
+      ),
+    );
+    _loadNotes();
+  }
+
+  void _enterSelectionMode() {
+    setState(() {
+      _isSelectionMode = true;
+      _selected = new List.generate(_notes.length, (index) => false);
+    });
+  }
+
+  void _exitSelectionMode() {
+    setState(() {
+      _isSelectionMode = false;
+      _selected = [];
+    });
   }
 }
