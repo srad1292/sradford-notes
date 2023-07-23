@@ -33,7 +33,8 @@ dependencies:
   flutter_quill: 7.2.7
   sqflite: 2.2.8+4
   get_it: 7.6.0
-
+  flutter_email_sender: 6.0.1
+  path_provider: 2.0.15
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

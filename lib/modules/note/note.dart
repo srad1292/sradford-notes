@@ -51,6 +51,22 @@ class Note {
     DatabaseColumn.UpdatedAt: updatedAt,
   };
 
+  Note.fromJson(Map<String, dynamic> json) {
+    content = json['content'];
+    createdAt = json['createdAt'];
+    raw = json['raw'];
+    title = json['title'];
+    updatedAt = json['updatedAt'];
+  }
+
+  Map toJson() => {
+    'content': content,
+    'createdAt': createdAt,
+    'raw': raw,
+    'title': title,
+    'updatedAt': updatedAt
+  };
+
   void setUpdatedAtToNow() {
     updatedAt = new DateTime.now().toIso8601String();
   }

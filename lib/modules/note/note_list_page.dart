@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:sradford_notes/modules/import_export/import_export_service.dart';
+import 'package:sradford_notes/modules/shared/class/result.dart';
 import 'package:sradford_notes/modules/shared/enum/info_dialog_type.dart';
 import 'package:sradford_notes/modules/shared/widgets/my_confirmation_dialog.dart';
 import 'package:sradford_notes/modules/shared/widgets/my_info_dialog.dart';
@@ -26,6 +28,7 @@ class _NoteListPageState extends State<NoteListPage> {
   String _noteSearchText = '';
 
   late NoteService _noteService;
+  late ImportExportService _importExportService;
 
   List<Note> _notes = [];
   List<bool> _selected = [];
@@ -41,6 +44,8 @@ class _NoteListPageState extends State<NoteListPage> {
   void initState() {
     super.initState();
     _noteService = serviceLocator.get<NoteService>();
+    _importExportService = serviceLocator.get<ImportExportService>();
+
     _searchController.addListener(noteSearchHandler);
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
@@ -115,7 +120,7 @@ class _NoteListPageState extends State<NoteListPage> {
           case NoteListAction.Import:
           // handle import
           case NoteListAction.Export:
-          // handle export
+            return _exportSelected();
           case NoteListAction.Delete:
             return _deleteSelected();
           default:
@@ -365,4 +370,35 @@ class _NoteListPageState extends State<NoteListPage> {
       showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Bulk delete failed.");
     }
   }
+
+  Future<void> _exportSelected() async {
+    if(selectedCount == 0) {
+      showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "You must select at least one note first.");
+      return;
+    }
+
+    try {
+      List<int> noteIds = [];
+      _selected.forEachIndexed((index, element) {
+        if(element == true) {
+          noteIds.add(_notes[index].noteId!);
+        }
+      });
+
+      Result exportResult = await _importExportService.ExportNotes(context: context, noteIds: noteIds);
+      if(exportResult.succeeded == false && exportResult.showedDialog == false) {
+        showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Failed to export notes");
+      } else if(exportResult.succeeded) {
+        showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "Exported ${noteIds.length} notes");
+      }
+    } catch(e) {
+      print("Note List Export Failed");
+      print(e.toString());
+      showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Unexpected error occurred while exporting notes");
+    }
+
+
+  }
+
+
 }

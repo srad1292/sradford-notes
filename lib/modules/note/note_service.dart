@@ -16,6 +16,11 @@ class NoteService {
     return await noteDao.getNoteById(noteId: noteId);
   }
 
+  Future<List<Note>?> getSelectedNotes({required List<int> noteIds}) async {
+    NoteDao noteDao = new NoteDao();
+    return await noteDao.getSelectedNotes(noteIds: noteIds);
+  }
+
   Future<List<Note>?> getAllNotes({String noteSearch = ''}) async {
     NoteDao noteDao = new NoteDao();
     return await noteDao.getAllNotes(noteSearch: noteSearch);

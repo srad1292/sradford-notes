@@ -39,6 +39,29 @@ class NoteDao {
     }
   }
 
+  Future<List<Note>?> getSelectedNotes({required List<int> noteIds}) async {
+    if(noteIds.isEmpty) { return []; }
+    try {
+      Database? db = await DBProvider.db.database;
+      String joinedIds = List.filled(noteIds.length, '?').join(',');
+      List<Map<String, dynamic>>? dbNotes = await db?.query(DatabaseTable.Note,
+          where: '${DatabaseColumn.NoteId} IN ($joinedIds)',
+          whereArgs: noteIds
+      );
+      if(dbNotes != null && dbNotes.length > 0) {
+        return List.generate(dbNotes.length, (index) {
+          return Note.fromPersistence(dbNotes[index]);
+        });
+      } else {
+        return [];
+      }
+    } on Exception catch (e) {
+      print("Note Dao: Error in getSelectedNotes");
+      print(e.toString());
+      return null;
+    }
+  }
+
   Future<List<Note>?> getAllNotes({String noteSearch = ''}) async {
     Database? db = await DBProvider.db.database;
     try {
