@@ -62,93 +62,103 @@ class _EditorPageState extends State<EditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        centerTitle: false,
-        leading: IconButton(
-          icon: Icon(Icons.save),
-          focusNode: _saveButtonFocusNode,
-          onPressed: saveNote,
-        ),
-        actions: [
-          PopupMenuButton(
-            onSelected: (value) async {
-              switch (value) {
-                case "cancel":
-                  return Navigator.of(context).pop();
-                case 'export':
-                  return _exportNote();
-                case 'delete':
-                  return _deleteNote();
-                default:
-                  throw UnimplementedError();
-              }
-            },
-            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-              PopupMenuItem<String>(
-                value: "cancel",
-                // onTap: () => Navigator.of(context).pop(),
-                child: Text('Cancel'),
-              ),
-              if(workingNote.noteId != null)
+    return WillPopScope(
+      onWillPop: () async {
+        print("I am inside of willpopscope");
+        if(_hasUnsavedChanges()) {
+          return await showMyConfirmationDialog(context: context, body: "You have unsaved changes. Are you sure you want to leave?");
+        }
+        return true;
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text(title),
+          centerTitle: false,
+          leading: IconButton(
+            icon: Icon(Icons.save),
+            focusNode: _saveButtonFocusNode,
+            onPressed: saveNote,
+          ),
+          actions: [
+            PopupMenuButton(
+              onSelected: (value) async {
+                switch (value) {
+                  case "cancel":
+                    await Navigator.of(context).maybePop();
+                    return;
+                  case 'export':
+                    return _exportNote();
+                  case 'delete':
+                    return _deleteNote();
+                  default:
+                    throw UnimplementedError();
+                }
+              },
+              itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                 PopupMenuItem<String>(
-                  value: "export",
-                  // onTap: _exportNote,
-                  child: Text('Export'),
+                  value: "cancel",
+                  // onTap: () => Navigator.of(context).pop(),
+                  child: Text('Cancel'),
                 ),
-              if(workingNote.noteId != null)
-                PopupMenuItem<String>(
-                  value: "delete",
-                  child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
-                ),
-            ],
-          )
-        ],
-      ),
-      body: SafeArea(
-        child: Container(
-            color: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8.0),
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24),
-                    child: TextField(
-                      controller: _titleController,
-                      decoration: InputDecoration(
-                        hintText: "Title"
-                      ),
-                    ),
+                if(workingNote.noteId != null)
+                  PopupMenuItem<String>(
+                    value: "export",
+                    // onTap: _exportNote,
+                    child: Text('Export'),
                   ),
-                  SizedBox(height: 8),
-                  Container(
-                    child: QuillToolbar.basic(
-                      controller: _controller,
-                      color: Colors.white,
-                      showColorButton: false,
-                      showBackgroundColorButton: false,
-                      showClearFormat: false,
-                      showLink: false,
-                      showSuperscript: false,
-                      showSubscript: false,
-                    ),
+                if(workingNote.noteId != null)
+                  PopupMenuItem<String>(
+                    value: "delete",
+                    child: Text('Delete', style: TextStyle(color: Colors.redAccent),),
                   ),
-                  Expanded(
-                    child: Container(
-                      color: Colors.white,
-                      child: QuillEditor.basic(
-                        controller: _controller,
-                        readOnly: false, // true for view only mode
-                      ),
-                    ),
-                  )
-                ],
-              ),
+              ],
             )
+          ],
         ),
-      )
+        body: SafeArea(
+          child: Container(
+              color: Colors.white,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 24),
+                      child: TextField(
+                        controller: _titleController,
+                        decoration: InputDecoration(
+                          hintText: "Title"
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 8),
+                    Container(
+                      child: QuillToolbar.basic(
+                        controller: _controller,
+                        color: Colors.white,
+                        showColorButton: false,
+                        showBackgroundColorButton: false,
+                        showClearFormat: false,
+                        showLink: false,
+                        showSuperscript: false,
+                        showSubscript: false,
+                      ),
+                    ),
+                    Expanded(
+                      child: Container(
+                        color: Colors.white,
+                        child: QuillEditor.basic(
+                          controller: _controller,
+                          readOnly: false, // true for view only mode
+                        ),
+                      ),
+                    )
+                  ],
+                ),
+              )
+          ),
+        )
+      ),
     );
   }
 
@@ -203,6 +213,11 @@ class _EditorPageState extends State<EditorPage> {
       showMyInfoDialog(context: context, dialogType: InfoDialogType.Warning, body: "Must save the note before you can export it.");
       return;
     }
+    
+    if(_hasUnsavedChanges()) {
+      bool exportAnyway = await showMyConfirmationDialog(context: context, body: "You have unsaved changes that will not be exported. Continue anyway?");
+      if(!exportAnyway) { return; }
+    }
 
     try {
       List<int> noteIds = [workingNote.noteId!];
@@ -254,6 +269,12 @@ class _EditorPageState extends State<EditorPage> {
         body: "Something went wrong while trying to delete the note."
     );
   }
+
+  bool _hasUnsavedChanges() {
+    return workingNote.noteId == null || workingNote.content != jsonEncode(_controller.document.toDelta().toJson());
+  }
+
+
 
 
 }
