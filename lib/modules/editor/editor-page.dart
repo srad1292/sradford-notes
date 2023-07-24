@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
 import 'package:sradford_notes/modules/import_export/import_export_service.dart';
 import 'package:sradford_notes/modules/note/note_service.dart';
@@ -25,6 +26,7 @@ class EditorPage extends StatefulWidget {
 
 class _EditorPageState extends State<EditorPage> {
 
+  final _saveButtonFocusNode = new FocusNode();
   final QuillController _controller = QuillController.basic();
   final TextEditingController _titleController = new TextEditingController();
 
@@ -51,8 +53,10 @@ class _EditorPageState extends State<EditorPage> {
 
   @override
   void dispose() {
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
     _controller.dispose();
     _titleController.dispose();
+    _saveButtonFocusNode.dispose();
     super.dispose();
   }
 
@@ -64,6 +68,7 @@ class _EditorPageState extends State<EditorPage> {
         centerTitle: false,
         leading: IconButton(
           icon: Icon(Icons.save),
+          focusNode: _saveButtonFocusNode,
           onPressed: saveNote,
         ),
         actions: [
@@ -148,6 +153,11 @@ class _EditorPageState extends State<EditorPage> {
   }
 
   Future<void> saveNote() async {
+    // TODO: Note if you press save while keyboard is not open, you have to tap input multiple times
+    // to be able to see the cursor.  You can still type, just without seeing a visible cursor.
+    // I want the keyboard to close when save is pressed, but to also fix this issue.
+    FocusScope.of(context).requestFocus(_saveButtonFocusNode);
+
     Note noteToSave = workingNote.noteId == null ? Note.now() : Note.fromNote(workingNote);
     noteToSave.title = _titleController.text.trim().isEmpty ? 'Untitled Note' : _titleController.text;
     noteToSave.setUpdatedAtToNow();
