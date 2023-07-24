@@ -387,9 +387,9 @@ class _NoteListPageState extends State<NoteListPage> {
       });
 
       Result exportResult = await _importExportService.ExportNotes(context: context, noteIds: noteIds);
-      if(exportResult.succeeded == false && exportResult.showedDialog == false) {
+      if(exportResult.status == ResultStatus.failed && exportResult.showedDialog == false) {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Failed to export notes");
-      } else if(exportResult.succeeded) {
+      } else if(exportResult.status == ResultStatus.failed) {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "Exported ${noteIds.length} notes");
       }
     } catch(e) {

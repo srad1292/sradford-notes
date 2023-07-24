@@ -1,10 +1,12 @@
+enum ResultStatus { succeeded, cancelled, failed }
+
 class Result {
-  late bool succeeded;
+  late ResultStatus status;
   late bool showedDialog;
   late int dataCount;
 
-  Result({succeeded = false, showedDialog = false, dataCount = 0}) {
-    this.succeeded = succeeded;
+  Result({status = ResultStatus.failed, showedDialog = false, dataCount = 0}) {
+    this.status = status;
     this.showedDialog = showedDialog;
     this.dataCount = dataCount;
   }

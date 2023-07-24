@@ -19,7 +19,7 @@ class ImportExportService {
 
 
   Future<Result> ExportNotes({required BuildContext context, required List<int> noteIds}) async {
-    Result result = new Result(succeeded: false, showedDialog: false, dataCount: -1);
+    Result result = new Result(status: ResultStatus.failed, showedDialog: false, dataCount: -1);
     NoteService noteService = serviceLocator.get<NoteService>();
     try {
       // Get notes to export
@@ -35,8 +35,7 @@ class ImportExportService {
       // Ask for email to send to
       String recipient = await _getRecipientEmail(context);
       if(recipient.isEmpty) {
-        await showMyInfoDialog(context: context, dialogType: InfoDialogType.Warning, body: "Must provide a valid email");
-        result.showedDialog = true;
+        result.status = ResultStatus.cancelled;
         return result;
       }
       // Try to send email
@@ -47,7 +46,7 @@ class ImportExportService {
         return result;
       }
       // Return successfully
-      result.succeeded = true;
+      result.status = ResultStatus.succeeded;
       result.dataCount = notes.length;
       return result;
     } catch(e) {

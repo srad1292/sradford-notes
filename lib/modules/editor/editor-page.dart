@@ -213,7 +213,7 @@ class _EditorPageState extends State<EditorPage> {
       showMyInfoDialog(context: context, dialogType: InfoDialogType.Warning, body: "Must save the note before you can export it.");
       return;
     }
-    
+
     if(_hasUnsavedChanges()) {
       bool exportAnyway = await showMyConfirmationDialog(context: context, body: "You have unsaved changes that will not be exported. Continue anyway?");
       if(!exportAnyway) { return; }
@@ -223,9 +223,9 @@ class _EditorPageState extends State<EditorPage> {
       List<int> noteIds = [workingNote.noteId!];
 
       Result exportResult = await _importExportService.ExportNotes(context: context, noteIds: noteIds);
-      if(exportResult.succeeded == false && exportResult.showedDialog == false) {
+      if(exportResult.status == ResultStatus.failed && exportResult.showedDialog == false) {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Failed to export note");
-      } else if(exportResult.succeeded) {
+      } else if(exportResult.status == ResultStatus.failed) {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "Exported current note");
       }
     } catch(e) {
