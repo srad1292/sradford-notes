@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
@@ -63,7 +64,9 @@ class ImportExportService {
         return null;
       }
       
-      return File("${directory?.path}/sradford-notes-backup.json");
+      File file = File("${directory?.path}/sradford-notes-backup.json");
+      file.writeAsString(jsonEncode(data));
+      return file;
     } on Exception catch (e) {
       print("CreateExportFile error: ");
       print(e.toString());

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart' hide Text;
+import 'package:sradford_notes/modules/import_export/import_export_service.dart';
 import 'package:sradford_notes/modules/note/note_service.dart';
 import 'package:sradford_notes/modules/shared/enum/info_dialog_type.dart';
 import 'package:sradford_notes/modules/shared/widgets/my_confirmation_dialog.dart';
@@ -10,6 +11,7 @@ import 'package:sradford_notes/modules/shared/widgets/my_info_dialog.dart';
 import 'package:sradford_notes/utils/service_locator.dart';
 
 import '../note/note.dart';
+import '../shared/class/result.dart';
 
 
 class EditorPage extends StatefulWidget {
@@ -27,6 +29,7 @@ class _EditorPageState extends State<EditorPage> {
   final TextEditingController _titleController = new TextEditingController();
 
   late NoteService _noteService;
+  late ImportExportService _importExportService;
   late Note workingNote;
 
   String title = '';
@@ -35,6 +38,8 @@ class _EditorPageState extends State<EditorPage> {
   void initState() {
     super.initState();
     _noteService = serviceLocator.get<NoteService>();
+    _importExportService = serviceLocator.get<ImportExportService>();
+
     workingNote = widget.note == null ? Note.empty() : Note.fromNote(widget.note!);
     if(workingNote.title.isNotEmpty) {
       _titleController.text = workingNote.title;
@@ -184,6 +189,26 @@ class _EditorPageState extends State<EditorPage> {
   }
 
   Future<void> _exportNote() async {
+    if(workingNote.noteId == null) {
+      showMyInfoDialog(context: context, dialogType: InfoDialogType.Warning, body: "Must save the note before you can export it.");
+      return;
+    }
+
+    try {
+      List<int> noteIds = [workingNote.noteId!];
+
+      Result exportResult = await _importExportService.ExportNotes(context: context, noteIds: noteIds);
+      if(exportResult.succeeded == false && exportResult.showedDialog == false) {
+        showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Failed to export note");
+      } else if(exportResult.succeeded) {
+        showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "Exported current note");
+      }
+    } catch(e) {
+      print("Editor Page Export Failed");
+      print(e.toString());
+      showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Unexpected error occurred while exporting note");
+    }
+
 
   }
 

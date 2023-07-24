@@ -100,6 +100,7 @@ class _NoteListPageState extends State<NoteListPage> {
       floatingActionButton: !_loaded ? null : FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () async {
+          _exitSelectionMode();
           await Navigator.of(context).push(
             MaterialPageRoute(
               builder: (context) => EditorPage(),
