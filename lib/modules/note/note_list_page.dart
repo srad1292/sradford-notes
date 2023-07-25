@@ -119,7 +119,7 @@ class _NoteListPageState extends State<NoteListPage> {
           case NoteListAction.Select:
             return _enterSelectionMode();
           case NoteListAction.Import:
-          // handle import
+            return _importNotes();
           case NoteListAction.Export:
             return _exportSelected();
           case NoteListAction.Delete:
@@ -342,6 +342,22 @@ class _NoteListPageState extends State<NoteListPage> {
     });
   }
 
+  Future<void> _importNotes() async {
+    try {
+      Result importResult = await _importExportService.importNotes(context: context);
+      if(importResult.status == ResultStatus.failed && importResult.showedDialog == false) {
+        showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Failed to import selected notes");
+      } else if(importResult.status == ResultStatus.succeeded) {
+        showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "Imported ${importResult.dataCount} notes");
+        _loadNotes();
+      }
+    } catch(e) {
+      print("Note List Import Failed");
+      print(e.toString());
+      showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Unexpected error occurred while importing notes");
+    }
+  }
+
   Future<void> _deleteSelected() async {
     if(selectedCount == 0) {
       showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "You must select at least one note first.");
@@ -386,10 +402,10 @@ class _NoteListPageState extends State<NoteListPage> {
         }
       });
 
-      Result exportResult = await _importExportService.ExportNotes(context: context, noteIds: noteIds);
+      Result exportResult = await _importExportService.exportNotes(context: context, noteIds: noteIds);
       if(exportResult.status == ResultStatus.failed && exportResult.showedDialog == false) {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Failed to export notes");
-      } else if(exportResult.status == ResultStatus.failed) {
+      } else if(exportResult.status == ResultStatus.succeeded) {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "Exported ${noteIds.length} notes");
       }
     } catch(e) {

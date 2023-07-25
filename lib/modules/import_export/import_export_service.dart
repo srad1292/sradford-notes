@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_email_sender/flutter_email_sender.dart';
 import 'package:path_provider/path_provider.dart';
@@ -18,7 +19,7 @@ class ImportExportService {
   ImportExportService();
 
 
-  Future<Result> ExportNotes({required BuildContext context, required List<int> noteIds}) async {
+  Future<Result> exportNotes({required BuildContext context, required List<int> noteIds}) async {
     Result result = new Result(status: ResultStatus.failed, showedDialog: false, dataCount: -1);
     NoteService noteService = serviceLocator.get<NoteService>();
     try {
@@ -99,6 +100,89 @@ class ImportExportService {
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  Future<Result> importNotes({required BuildContext context}) async {
+    Result result = new Result(status: ResultStatus.failed, showedDialog: false, dataCount: -1);
+
+    try {
+      // Select file
+      List<File>? selectedFiles = await _selectBackupFile();
+      if(selectedFiles == null) {
+        await showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "File picker failed unexpectedly");
+        result.showedDialog = true;
+        return result;
+      } else if(selectedFiles.isEmpty) {
+        result.status = ResultStatus.cancelled;
+        return result;
+      } else if((selectedFiles[0].path).endsWith(".json") == false){
+        await showMyInfoDialog(context: context, dialogType: InfoDialogType.Warning, body: "File extension should be .json");
+        result.showedDialog = true;
+        return result;
+      }
+
+      File file = selectedFiles.first;
+
+      // parse file
+      List<Note> notes = (await _parseSelectedFile(file) ?? []);
+      if(notes.isEmpty) {
+        await showMyInfoDialog(
+          context: context,
+          dialogType: InfoDialogType.Error,
+          body: "Data in selected file is not proper format"
+        );
+        result.showedDialog = true;
+        return result;
+      }
+
+      // Loop through notes and add each to db
+      int savedCount = 0;
+
+      NoteService noteService = serviceLocator.get<NoteService>();
+
+      for(Note note in notes) {
+        int insertedId = await noteService.addOrUpdateNote(note);
+        if(insertedId > -1) {
+          savedCount++;
+        }
+      }
+
+      result.status = ResultStatus.succeeded;
+      result.dataCount = savedCount;
+      return result;
+    } on Exception catch (e) {
+      print("Error in ImportExportService Import Notes");
+      return result;
+    }
+  }
+
+  Future<List<File>?> _selectBackupFile() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles();
+
+      if (result != null) {
+        List<File> files = result.paths.map((path) { return File(path ?? '');}).toList();
+        return files;
+      } else {
+        // User canceled the picker
+        return [];
+      }
+    } catch(e) {
+      print("Import Export Service Select Backup File Error");
+      print(e.toString());
+      return null;
+    }
+
+  }
+
+  Future<List<Note>?> _parseSelectedFile(File file) async {
+    try {
+      var fileData = await file.readAsString();
+      List<Note> data = (jsonDecode(fileData) as List).map((e) => Note.fromJson(e)).toList();
+      return data;
+    } catch(e) {
+      return null;
     }
   }
 }

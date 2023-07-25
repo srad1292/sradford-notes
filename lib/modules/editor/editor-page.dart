@@ -222,7 +222,7 @@ class _EditorPageState extends State<EditorPage> {
     try {
       List<int> noteIds = [workingNote.noteId!];
 
-      Result exportResult = await _importExportService.ExportNotes(context: context, noteIds: noteIds);
+      Result exportResult = await _importExportService.exportNotes(context: context, noteIds: noteIds);
       if(exportResult.status == ResultStatus.failed && exportResult.showedDialog == false) {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Failed to export note");
       } else if(exportResult.status == ResultStatus.failed) {
