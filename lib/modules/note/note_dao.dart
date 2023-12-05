@@ -69,7 +69,7 @@ class NoteDao {
         DatabaseTable.Note,
         where: "${DatabaseColumn.Title} like ?",
         whereArgs: ["%${noteSearch.toLowerCase()}%"],
-        orderBy: orderBy == DatabaseColumn.UpdatedAt ? "$orderBy DESC" : orderBy,
+        orderBy: orderBy == DatabaseColumn.UpdatedAt ? "$orderBy DESC" : "Lower($orderBy)",
 
       );
       if(dbNotes != null && dbNotes.length > 0) {
