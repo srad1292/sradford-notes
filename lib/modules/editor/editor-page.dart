@@ -119,7 +119,7 @@ class _EditorPageState extends State<EditorPage> {
           child: Container(
               color: Colors.white,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
                 child: Column(
                   children: [
                     Padding(

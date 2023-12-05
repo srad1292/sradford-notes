@@ -1,8 +1,8 @@
 class DatabaseColumn {
-  static final String Content = 'content';
-  static final String CreatedAt = 'created_at';
-  static final String NoteId = 'note_id';
-  static final String Raw = 'Raw';
-  static final String Title = "title";
-  static final String UpdatedAt = 'updated_at';
+  static const String Content = 'content';
+  static const String CreatedAt = 'created_at';
+  static const String NoteId = 'note_id';
+  static const String Raw = 'Raw';
+  static const String Title = "title";
+  static const String UpdatedAt = 'updated_at';
 }

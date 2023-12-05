@@ -65,7 +65,7 @@ class ImportExportService {
       }
       
       File file = File("${directory?.path}/sradford-notes-backup.json");
-      file.writeAsString(jsonEncode(data));
+      await file.writeAsString(jsonEncode(data));
       return file;
     } on Exception catch (e) {
       print("CreateExportFile error: ");
@@ -89,7 +89,7 @@ class ImportExportService {
     final Email email = Email(
       body: 'You have received these notes exported from sradford-notes',
       subject: 'SradfordNotes backup',
-      recipients: [recipient ?? ''],
+      recipients: [recipient],
       cc: [],
       bcc: [],
       attachmentPaths: [file.path],
@@ -153,6 +153,7 @@ class ImportExportService {
       return result;
     } on Exception catch (e) {
       print("Error in ImportExportService Import Notes");
+      print(e.toString());
       return result;
     }
   }

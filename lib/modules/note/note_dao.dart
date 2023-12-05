@@ -62,13 +62,15 @@ class NoteDao {
     }
   }
 
-  Future<List<Note>?> getAllNotes({String noteSearch = ''}) async {
+  Future<List<Note>?> getAllNotes({String noteSearch = '', String? orderBy = DatabaseColumn.UpdatedAt}) async {
     Database? db = await DBProvider.db.database;
     try {
       List<Map<String, dynamic>>? dbNotes = await db?.query(
-          DatabaseTable.Note,
-          where: "${DatabaseColumn.Title} like ?",
-          whereArgs: ["%${noteSearch.toLowerCase()}%"]
+        DatabaseTable.Note,
+        where: "${DatabaseColumn.Title} like ?",
+        whereArgs: ["%${noteSearch.toLowerCase()}%"],
+        orderBy: orderBy == DatabaseColumn.UpdatedAt ? "$orderBy DESC" : orderBy,
+
       );
       if(dbNotes != null && dbNotes.length > 0) {
         return List.generate(dbNotes.length, (index) {

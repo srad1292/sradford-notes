@@ -7,6 +7,7 @@ import 'package:sradford_notes/modules/shared/class/result.dart';
 import 'package:sradford_notes/modules/shared/enum/info_dialog_type.dart';
 import 'package:sradford_notes/modules/shared/widgets/my_confirmation_dialog.dart';
 import 'package:sradford_notes/modules/shared/widgets/my_info_dialog.dart';
+import 'package:sradford_notes/persistance/database_column.dart';
 import 'package:sradford_notes/utils/service_locator.dart';
 
 import '../editor/editor-page.dart';
@@ -40,6 +41,8 @@ class _NoteListPageState extends State<NoteListPage> {
 
   int selectedCount = 0;
 
+  String _orderBy = DatabaseColumn.UpdatedAt;
+
   @override
   void initState() {
     super.initState();
@@ -49,7 +52,7 @@ class _NoteListPageState extends State<NoteListPage> {
     _searchController.addListener(noteSearchHandler);
 
     SchedulerBinding.instance.addPostFrameCallback((timeStamp) {
-      _loadNotes();
+      _loadNotes(orderBy: _orderBy);
     });
   }
 
@@ -69,7 +72,7 @@ class _NoteListPageState extends State<NoteListPage> {
     _debounce = Timer(const Duration(milliseconds: 500), () {
       if (mounted) {
         _noteSearchText = _searchController.text;
-        _loadNotes(search: _noteSearchText);
+        _loadNotes(search: _noteSearchText, orderBy: _orderBy);
       }
     });
   }
@@ -106,7 +109,7 @@ class _NoteListPageState extends State<NoteListPage> {
               builder: (context) => EditorPage(),
             ),
           );
-          _loadNotes();
+          _loadNotes(orderBy: _orderBy);
         },
       ),
     );
@@ -179,7 +182,7 @@ class _NoteListPageState extends State<NoteListPage> {
         ),
         SizedBox(height: 8),
         GestureDetector(
-          onTap: () => _loadNotes(),
+          onTap: () => _loadNotes(orderBy: _orderBy),
           child: Text(
             "Try Again.",
             style: TextStyle(
@@ -228,6 +231,9 @@ class _NoteListPageState extends State<NoteListPage> {
         if(_isSelectionMode)
           SizedBox(height: 8),
 
+        if(!_isSelectionMode && _notes.isNotEmpty)
+          _buildSortBy(),
+
         if(_notes.isEmpty)
           Center(
             child: Text("No notes match."),
@@ -239,9 +245,9 @@ class _NoteListPageState extends State<NoteListPage> {
               itemBuilder: (context, index) {
                 String title = _notes[index].title;
                 String subtitle = _notes[index].getPreview();
-                if(_isSelectionMode) {
-                  print("Is $index selected: ${_selected[index]}");
-                }
+                // if(_isSelectionMode) {
+                //   print("Is $index selected: ${_selected[index]}");
+                // }
                 return ListTile(
                   leading: _isSelectionMode ?
                     Icon(
@@ -290,6 +296,26 @@ class _NoteListPageState extends State<NoteListPage> {
     );
   }
 
+  Widget _buildSortBy() {
+    return GestureDetector(
+      onTap: orderByToggle,
+      child: Text(
+          _orderBy == "${DatabaseColumn.UpdatedAt}" ? "Sort: Alphabetically" : "Sort: Last Updated",
+          style: TextStyle(
+              color: Colors.blue,
+              fontWeight: FontWeight.w500
+          )
+      ),
+    );
+  }
+
+  void orderByToggle() {
+    setState(() {
+      _orderBy = _orderBy == "${DatabaseColumn.UpdatedAt}" ? "${DatabaseColumn.Title}" : "${DatabaseColumn.UpdatedAt}";
+    });
+    _loadNotes(search: _searchController.text, orderBy: _orderBy);
+  }
+
   void quickSelectionToggle() {
     setState(() {
       _selected.forEachIndexed((index, element) {
@@ -299,8 +325,8 @@ class _NoteListPageState extends State<NoteListPage> {
     });
   }
 
-  Future<void> _loadNotes({String search = ''}) async {
-    List<Note>? startingNotes = await _noteService.getAllNotes(noteSearch: search);
+  Future<void> _loadNotes({required String orderBy, String search = ''}) async {
+    List<Note>? startingNotes = await _noteService.getAllNotes(noteSearch: search, orderBy: orderBy);
     if(startingNotes == null) {
       setState(() {
         _loaded = true;
@@ -323,7 +349,7 @@ class _NoteListPageState extends State<NoteListPage> {
         builder: (context) => EditorPage(note: note),
       ),
     );
-    _loadNotes();
+    _loadNotes(orderBy: _orderBy);
   }
 
   void _enterSelectionMode() {
@@ -349,7 +375,7 @@ class _NoteListPageState extends State<NoteListPage> {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Failed to import selected notes");
       } else if(importResult.status == ResultStatus.succeeded) {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "Imported ${importResult.dataCount} notes");
-        _loadNotes();
+        _loadNotes(orderBy: _orderBy);
       }
     } catch(e) {
       print("Note List Import Failed");
@@ -381,7 +407,7 @@ class _NoteListPageState extends State<NoteListPage> {
         showMyInfoDialog(context: context, dialogType: InfoDialogType.Info, body: "No notes deleted.");
       } else {
         _exitSelectionMode();
-        _loadNotes(search: _searchController.text);
+        _loadNotes(search: _searchController.text, orderBy: _orderBy);
       }
     } catch(e) {
       showMyInfoDialog(context: context, dialogType: InfoDialogType.Error, body: "Bulk delete failed.");

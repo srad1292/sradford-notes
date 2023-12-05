@@ -21,9 +21,9 @@ class NoteService {
     return await noteDao.getSelectedNotes(noteIds: noteIds);
   }
 
-  Future<List<Note>?> getAllNotes({String noteSearch = ''}) async {
+  Future<List<Note>?> getAllNotes({String? orderBy, String noteSearch = ''}) async {
     NoteDao noteDao = new NoteDao();
-    return await noteDao.getAllNotes(noteSearch: noteSearch);
+    return await noteDao.getAllNotes(noteSearch: noteSearch, orderBy: orderBy);
   }
 
   Future<int> deleteNote({int noteId = -1}) async {
